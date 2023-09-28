@@ -1,17 +1,16 @@
 version: "3.3"
 services:
   pihole:
-    container_name: pihole
     image: pihole/pihole:latest
-    hostname: pihole.$DOMAIN
+    hostname: ${TRAEFIK_SUBDOMAIN}.ditscher.me
     restart: unless-stopped
-    # networks:
-    #   - traefik
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "67:67/udp"
-      - "8089:80/tcp"
+    networks:
+      - traefik
+    # ports:
+    #   - "53:53/tcp"
+    #   - "53:53/udp"
+    #   - "67:67/udp"
+    # #  - "8089:80/tcp"
     environment:
       - TZ=$TZ
       - WEBPASSWORD=$PIHOLE_PASSWORD
@@ -24,37 +23,39 @@ services:
     volumes:
        - ./data/etc-pihole/:/etc/pihole/
        - ./data/etc-dnsmasq.d/:/etc/dnsmasq.d/
+      # - ./config/hosts:/etc/hosts:ro
+      # - ./config/resolv.conf:/etc/resolv.conf:ro
+      # - ./config/dnsmasq.conf:/etc/dnsmasq.d/02-network.conf:ro
+      # - ./config/pihole-FTL.conf:/etc/pihole/pihole-FTL.conf:ro
     cap_add:
       - NET_ADMIN
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - traefik.enable=true
+      - traefik.docker.network=traefik
       # Web UI
-      - "traefik.http.routers.pihole.entrypoints=web"
-      - "traefik.http.routers.pihole.rule=Host(`pihole.$DOMAIN`)"
-      - "traefik.http.routers.pihole.middlewares=https-redirect@file"
-      - "traefik.http.routers.pihole-secure.entrypoints=websecure"
-      - "traefik.http.routers.pihole-secure.rule=Host(`pihole.$DOMAIN`)"
-      - "traefik.http.routers.pihole-secure.tls=true"
-      - "traefik.http.routers.pihole-secure.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.pihole-secure.middlewares=sec-headers@file"
-      - "traefik.http.routers.pihole-secure.service=pihole"
-      - "traefik.http.services.pihole.loadbalancer.server.port=80"
-      # # DNS-over-TLS
-      # - "traefik.tcp.routers.dnsovertls.rule=HostSNI(`pihole.$DOMAIN`)"
-      # - "traefik.tcp.routers.dnsovertls.entrypoints=dnsovertls"
-      # - "traefik.tcp.routers.dnsovertls.tls.certresolver=mytlschallenge"
-      # - "traefik.tcp.routers.dnsovertls.service=pihole"
-      # # Normal DNS coming in on 53 TCP, no TLS
-      # - "traefik.tcp.routers.dns.rule=HostSNI(`pihole.$DOMAIN`)"
-      # - "traefik.tcp.routers.dns.entrypoints=dns"
-      # - "traefik.tcp.routers.dns.service=pihole"
-      # # recieves traffic from both the TLS and non-TLS traefik routers
-      # - "traefik.tcp.services.pihole.loadbalancer.server.port=53"
-      # # Normal DNS coming in on 53 UDP
-      # - "traefik.udp.routers.udpdns.entrypoints=udpdns"
-      # - "traefik.udp.routers.udpdns.service=pihole"
-      # - "traefik.udp.services.pihole.loadbalancer.server.port=53"
+      - traefik.http.routers.pihole-secure.entrypoints=websecure
+      - traefik.http.routers.pihole-secure.rule=Host(`${TRAEFIK_SUBDOMAIN}.ditschers.de`, `${TRAEFIK_SUBDOMAIN}.ditscher.me`)
+      - traefik.http.routers.pihole-secure.tls=true
+      - traefik.http.routers.pihole-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.pihole-secure.middlewares=secure-headers@file
+      - traefik.http.routers.pihole-secure.service=pihole
+      - traefik.http.services.pihole.loadbalancer.server.port=80
+      # DNS-over-TLS
+      - traefik.tcp.routers.dnsovertls.rule=HostSNI(`${TRAEFIK_SUBDOMAIN}.ditschers.de`, `${TRAEFIK_SUBDOMAIN}.ditscher.me`)
+      - traefik.tcp.routers.dnsovertls.entrypoints=dnsovertls
+      - traefik.tcp.routers.dnsovertls.tls.certresolver=letsencrypt
+      - traefik.tcp.routers.dnsovertls.service=pihole
+      # Normal DNS coming in on 53 TCP, no TLS
+      - traefik.tcp.routers.dns.rule=HostSNI(`*`)
+      - traefik.tcp.routers.dns.entrypoints=dns
+      #- traefik.tcp.routers.dns.tls={}
+      - traefik.tcp.routers.dns.service=pihole
+      # recieves traffic from both the TLS and non-TLS traefik routers
+      - traefik.tcp.services.pihole.loadbalancer.server.port=53
+      # Normal DNS coming in on 53 UDP
+      - traefik.udp.routers.udpdns.entrypoints=udpdns
+      - traefik.udp.routers.udpdns.service=pihole
+      - traefik.udp.services.pihole.loadbalancer.server.port=53
 
 networks:
   traefik:
