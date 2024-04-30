@@ -34,14 +34,14 @@ services:
       - traefik.docker.network=traefik
       # Web UI
       - traefik.http.routers.pihole-secure.entrypoints=websecure
-      - traefik.http.routers.pihole-secure.rule=Host(`${TRAEFIK_SUBDOMAIN}.ditschers.de`, `${TRAEFIK_SUBDOMAIN}.ditscher.me`)
+      - traefik.http.routers.pihole-secure.rule=Host(`${TRAEFIK_SUBDOMAIN}.ditschers.de`) || Host(`${TRAEFIK_SUBDOMAIN}.ditscher.me`)
       - traefik.http.routers.pihole-secure.tls=true
       - traefik.http.routers.pihole-secure.tls.certresolver=letsencrypt
       - traefik.http.routers.pihole-secure.middlewares=secure-headers@file
       - traefik.http.routers.pihole-secure.service=pihole
       - traefik.http.services.pihole.loadbalancer.server.port=80
       # DNS-over-TLS
-      - traefik.tcp.routers.dnsovertls.rule=HostSNI(`${TRAEFIK_SUBDOMAIN}.ditschers.de`, `${TRAEFIK_SUBDOMAIN}.ditscher.me`)
+      - traefik.tcp.routers.dnsovertls.rule=HostSNI(`${TRAEFIK_SUBDOMAIN}.ditschers.de`) || HostSNI(`${TRAEFIK_SUBDOMAIN}.ditscher.me`)
       - traefik.tcp.routers.dnsovertls.entrypoints=dnsovertls
       - traefik.tcp.routers.dnsovertls.tls.certresolver=letsencrypt
       - traefik.tcp.routers.dnsovertls.service=pihole
